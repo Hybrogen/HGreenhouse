@@ -17,6 +17,10 @@ class HSQL(object):
         self.port_table = 'ports'
         self.port_fields = ['id', 'name', 'local']
         self.data_table = 'datas'
+        self.data_fields = {
+                    'dht': ['temperature', 'humidity', 'check_datetime'],
+                    'light': ['light', 'check_datetime'],
+                }
 
 #####################          插入操作          ##########################
 
@@ -72,8 +76,14 @@ class HSQL(object):
         data = [dict(zip(self.port_fields, d)) for d in data]
         return data
 
-    def dht_get(self, query_data: dict) -> dict:
+    def get_data(self, query_data: dict) -> dict:
         data = dict()
+        # 检查数据正确性
+        if 'data_type' not in query_data:
+            data['state'] = 'error'
+            data['error_info']  = "缺少数据类型 (data_type = dht/light)"
+            data['error_info'] += "\nLack data of (data_type = dht/light)"
+            return data
         if 'pid' in query_data:
             pid = query_data['pid']
         else:
@@ -85,11 +95,20 @@ class HSQL(object):
                 data['error_info'] += f"\n{json.dumps(ports_data)}"
                 return data
             pid = ports_data[0]['id']
-        sql = f"select `temperature`, `humidity`, `check_datetime` from `{self.port_table}` where pid = {pid}"
-        
+
+        # 生成 sql 语句
+        fields = ', '.join([f"`{field}`" for field in self.data_fields[query_data['data_type']]])
+        sql = f"SELECT {fields} FROM `{query_data['data_type']}_{self.port_table}` WHERE pid = {pid}"
         if 'query_num' in query_data:
             sql += f" ORDER BY id DESC LIMIT {query_data['query_num']}"
-        elif 'start_date' in query_data and ''
+        elif 'start_date' in query_data and 'end_date' in query_data:
+            sql += f" AND `check_datetime` BETWEEN '{query_data['start_date']}' AND '{query_data['end_date']}'"
+
+        # 获取并返回数据
+        rdata = self.sql_select(sql)
+        data['data'] = [dict(zip(self.data_fields[query_data['data_type']], d)) for d in rdata]
+        data['state'] = 'ok'
+        return data
 
     def __del__(self):
         self.con.close()
