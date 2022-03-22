@@ -9,21 +9,71 @@ GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
 
 class HRELAY(object):
-    def __init__(self, pin :int, tigger :bool = False):
+    def __init__(self, pin: int, trigger: bool = False):
         self.pin = pin
-        GPIO.setup(self.p, GPIO.OUT)
+        GPIO.setup(self.pin, GPIO.OUT)
         self.trigger = trigger
+        self.set_output(not trigger)
 
-    def set_pin(self, pin :int):
+    def set_pin(self, pin: int):
         GPIO.cleanup()
         self.pin = pin
+        GPIO.setup(self.pin, GPIO.OUT)
 
-    def set_output(self, state :bool):
-        GPIO.output(self.pin, state)
+    def set_output(self, state: bool):
+        GPIO.output(self.pin, state == self.trigger)
+
+    def check(self) -> bool:
+        return GPIO.input(self.pin) == self.trigger
+
+    def __del__(self):
+        GPIO.cleanup()
+
+class SteeppingMOTOR(object):
+    def __init__(self, pins: list):
+        self.pins = pins
+        for pin in pins:
+            GPIO.setup(pin, GPIO.OUT)
+            GPIO.output(pin, False)
+        self.phases = [
+                [1, 0, 0, 1], # 1
+                [1, 0, 0, 0], # 2
+                [1, 1, 0, 0], # 3
+                [0, 1, 0, 0], # 4
+                [0, 1, 1, 0], # 5
+                [0, 0, 1, 0], # 6
+                [0, 0, 1, 1], # 7
+                [0, 0, 0, 1], # 8
+                ]
+
+    def run(self, mode: bool, run_duration: int = 3):
+        stime = time.time()
+        while int(time.time() - stime) < run_duration:
+            for phase in (self.phases if mode else self.phases[::-1]):
+                for pin, state in zip(self.pins, phase):
+                    GPIO.output(pin, state)
+                time.sleep(0.001)
+
+    def set_pin(self, pins: list):
+        GPIO.cleanup()
+        self.pins = pins
+        for pin in pins:
+            GPIO.setup(pin, GPIO.OUT)
+            GPIO.output(pin, False)
 
     def __del__(self):
         GPIO.cleanup()
 
 if __name__ == '__main__':
-    print('这个包含了继电器控制液泵操作的类')
+    '''
+    a = HRELAY(4)
+    print(a.check())
+    a.set_output(True)
+    print(a.check())
+    a.set_output(False)
+    print(a.check())
+    '''
+    s = SteeppingMOTOR([6, 13, 19, 26])
+    s.run(True)
+    s.run(False, 10)
 
