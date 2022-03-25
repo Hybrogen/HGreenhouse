@@ -22,9 +22,11 @@ HARDMODULEDIR = "HModules"
 check_file('dir', HARDMODULEDIR)
 
 thresholds = {
-        'light': 5,
         'temperature': 24,
         'humidity': 80,
+        'light': 5,
+        'curtain_auto': True,
+        'curtain_state': True,
     }
 
 THRESHOLDS = f"{HARDMODULEDIR}/thresholds"
@@ -42,6 +44,9 @@ def reset_threshold(first_init: bool = False):
         with open(THRESHOLDS, encoding = 'utf8') as f:
             thresholds = json.loads(f.readline())
 
+def update_threshold_file():
+    with open(THRESHOLDS, 'w', encoding = 'utf8') as f: f.write(json.dumps(thresholds))
+
 ################################## 初始化各个模块 ##################################
 from HModules import HActuator, HMySQL, HSensors
 
@@ -54,25 +59,42 @@ a_water = HActuator.HRELAY(24)
 ################################  定义各个功能模块  ################################
 
 def module_1_autoWater() -> int:
+    start_run_time = time.time()
     reset_threshold()
     data = s_dht.check()
     if data.get('state') == 'error': return
     data['pid'] = PORTID
     sql.dht_save(data)
     humidity, temperature = data['humidity'], data['temperature']
+
+    hlog(f"检测到温湿度数据: data = {data}")
     if humidity < thresholds['humidity'] or temperature > thresholds['temperature']:
         a_water.run(True)
-        return 10
+        return 10 - int(time.time() - start_run_time)
     a_water.run(False)
-    hlog(f"检测到温湿度数据: data = {data}")
-    return 600
+    return 600 - int(time.time() - start_run_time)
 
 def module_2_autoCurtain() -> int:
+    start_run_time = time.time()
     reset_threshold()
     data = s_light.check()
-    a_curtain.run(data)
+    # 自动模式 - 如果检测状态和当前状态不同，窗帘活动并更新状态
+    if thresholds['curtain_auto']:
+        if thresholds['curtain_state'] != data:
+            a_curtain.run(data)
+            thresholds['curtain_state'] = data
+            update_threshold_file()
+    # 手动模式 - 如果检测状态与手动设定状态不同，活动窗帘
+    # 并将窗帘重置为自动模式
+    else:
+        thresholds['curtain_auto'] = True
+        if thresholds['curtain_state'] != data:
+            a_curtain.run(thresholds['curtain_state'])
+            thresholds['curtain_state'] = data
+        update_threshold_file()
+
     hlog(f"检测到光照度数据: data = {data}")
-    return 600
+    return 600- int(time.time() - start_run_time)
 
 def main():
     reset_threshold(True)
