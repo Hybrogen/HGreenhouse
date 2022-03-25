@@ -13,14 +13,14 @@ class HRELAY(object):
         self.pin = pin
         GPIO.setup(self.pin, GPIO.OUT)
         self.trigger = trigger
-        self.set_output(not trigger)
+        self.run(not trigger)
 
     def set_pin(self, pin: int):
         GPIO.cleanup()
         self.pin = pin
         GPIO.setup(self.pin, GPIO.OUT)
 
-    def set_output(self, state: bool):
+    def run(self, state: bool):
         GPIO.output(self.pin, state == self.trigger)
 
     def check(self) -> bool:
@@ -53,6 +53,7 @@ class SteeppingMOTOR(object):
                 for pin, state in zip(self.pins, phase):
                     GPIO.output(pin, state)
                 time.sleep(0.001)
+        for pin in self.pins: GPIO.output(pin, False)
 
     def set_pin(self, pins: list):
         GPIO.cleanup()

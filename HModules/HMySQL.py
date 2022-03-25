@@ -6,21 +6,19 @@ import pymysql
 
 class HSQL(object):
     def __init__(self, data_base: str):
-        self.con = pymysql.connect(
-                host = 'zinchon.com',
-                port = 336,
-                user = 'zinc',
-                passwd = 'zinchon.cn',
-                db = data_base,
-                charset = 'utf8'
-                )
+        self.data_base = data_base
+        self.con = self.get_sql_connection()
         self.port_table = 'ports'
         self.port_fields = ['id', 'name', 'local']
         self.data_table = 'datas'
         self.data_fields = {
-                    'dht': ['temperature', 'humidity', 'check_datetime'],
-                    'light': ['light', 'check_datetime'],
-                }
+            'dht': ['temperature', 'humidity', 'check_datetime'],
+            'light': ['light', 'check_datetime'],
+        }
+
+    def get_sql_connection(self):
+        con = pymysql.connect(host = 'zinchon.com', port = 336, user = 'zinc', passwd = 'zinchon.cn', db = self.data_base, charset = 'utf8')
+        return con
 
 #####################          插入操作          ##########################
 
@@ -33,7 +31,11 @@ class HSQL(object):
             return True
         except pymysql.err.OperationalError:
             return False
-    
+        except pymysql.err.InterfaceError:
+            if cur: cur.close()
+            if self.con: self.con.close()
+            self.con = self.get_sql_connection()
+            
     def dht_save(self, data: dict) -> bool:
         try:
             save_data = list()
@@ -43,7 +45,7 @@ class HSQL(object):
         except KeyError:
             return False
 
-        sql = f"insert into `{self.data_table}`(`pid`, `temperature`, `humidity`, `check_datetime`) values(%s, %s, %s, %s)"
+        sql = f"insert into `dht_{self.data_table}`(`pid`, `temperature`, `humidity`, `check_datetime`) values(%s, %s, %s, %s)"
         return self.sql_insert(sql, save_data)
 
     def add_port(self, name: str, local: str):

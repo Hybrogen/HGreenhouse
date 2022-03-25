@@ -42,7 +42,7 @@ class DHT(IOSENSOR):
 
 if __name__ == '__main__':
     # s = IOSENSOR(7)
-    s = DHT(4)
+    s = DHT(23, 'DHT22')
     while True:
         try:
             print(f"{s.check()}    ", end = '\n')
