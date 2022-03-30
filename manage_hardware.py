@@ -5,9 +5,21 @@ import os
 import json
 import time
 
+def ttime(gt_mode: str = 'all'):
+    if gt_mode == 'all': return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+    temp_strs = {
+        'all': '%Y-%m-%d %H:%M:%S',
+        'year': '%Y',
+        'mounth': '%m',
+        'day': '%d',
+        'hour': '%H',
+        'minute': '%M',
+        'second': '%S',
+    }
+    return int(time.strftime(temp_strs[gt_mode], time.localtime(time.time())))
+
 def hlog(msg):
-    logTime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-    print(f"{logTime} - {msg}")
+    print(f"{ttime()} - {msg}")
 
 def check_file(f_type: str, f_name: str, content: str = "{}"):
     if f_type == 'dir' and not os.path.isdir(f_name):
@@ -23,7 +35,7 @@ check_file('dir', HARDMODULEDIR)
 
 thresholds = {
         'temperature': 24,
-        'humidity': 80,
+        'humidity': 50,
         'light': 5,
         'curtain_auto': True,
         'curtain_state': True,
@@ -77,23 +89,21 @@ def module_1_autoWater() -> int:
 def module_2_autoCurtain() -> int:
     start_run_time = time.time()
     reset_threshold()
-    data = s_light.check()
-    # 自动模式 - 如果检测状态和当前状态不同，窗帘活动并更新状态
+    have_light = s_light.check()
+    # 自动模式 - 
     if thresholds['curtain_auto']:
-        if thresholds['curtain_state'] != data:
-            a_curtain.run(data)
-            thresholds['curtain_state'] = data
+        if have_light == thresholds['curtain_state']:
+            a_curtain.run(not have_light)
+            thresholds['curtain_state'] = not have_light
             update_threshold_file()
     # 手动模式 - 如果检测状态与手动设定状态不同，活动窗帘
     # 并将窗帘重置为自动模式
     else:
         thresholds['curtain_auto'] = True
-        if thresholds['curtain_state'] != data:
-            a_curtain.run(thresholds['curtain_state'])
-            thresholds['curtain_state'] = data
+        a_curtain.run(thresholds['curtain_state'])
         update_threshold_file()
 
-    hlog(f"检测到光照度数据: data = {data}")
+    hlog(f"检测到光照度数据: have_light = {have_light}")
     return 600- int(time.time() - start_run_time)
 
 def main():
