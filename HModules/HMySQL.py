@@ -58,6 +58,7 @@ class HSQL(object):
 #####################          查询操作          ##########################
 
     def sql_select(self, sql: str):
+        print(f"sql_select info: sql = [{sql}]")
         try:
             cur = self.con.cursor()
             cur.execute(sql)
@@ -65,7 +66,7 @@ class HSQL(object):
             cur.close()
             return rdata
         except Exception as e:
-            # print(e)
+            print(f"sql_select error: e = {e}")
             return None
 
     def get_ports(self, query_data: dict = None) -> dict:
@@ -101,7 +102,7 @@ class HSQL(object):
 
         # 生成 sql 语句
         fields = ', '.join([f"`{field}`" for field in self.data_fields[query_data['data_type']]])
-        sql = f"SELECT {fields} FROM `{query_data['data_type']}_{self.port_table}` WHERE pid = {pid}"
+        sql = f"SELECT {fields} FROM `{query_data['data_type']}_{self.data_table}` WHERE pid = {pid}"
         if 'query_num' in query_data:
             sql += f" ORDER BY id DESC LIMIT {query_data['query_num']}"
         elif 'start_date' in query_data and 'end_date' in query_data:
@@ -109,7 +110,7 @@ class HSQL(object):
 
         # 获取并返回数据
         rdata = self.sql_select(sql)
-        data['data'] = [dict(zip(self.data_fields[query_data['data_type']], d)) for d in rdata]
+        data['data'] = [dict(zip(self.data_fields[query_data['data_type']], d)) for d in rdata] if rdata else []
         data['state'] = 'ok'
         return data
 

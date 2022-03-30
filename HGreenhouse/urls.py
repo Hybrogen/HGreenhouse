@@ -20,7 +20,7 @@ from HGreenhouse import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('index/', views.index),
+    path('', views.index),
     path('setWenDu', views.set_temperature),
     path('setShiDu', views.set_humidity),
     path('setGuang', views.set_light),
