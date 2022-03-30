@@ -21,11 +21,11 @@ from HGreenhouse import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('index/', views.index),
-    path('getHome', views.get_home),
     path('setWenDu', views.set_temperature),
     path('setShiDu', views.set_humidity),
     path('setGuang', views.set_light),
     path('setShuiBen', views.set_water),
     path('setZheGuang', views.set_curtain),
+    path('getHome', views.get_data),
     path('getDetail', views.get_data),
 ]
