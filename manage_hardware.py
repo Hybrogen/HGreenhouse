@@ -119,6 +119,9 @@ def main():
             },
         }
     while True:
+        if os.path.isfile(f"{THRESHOLDS}_reset"):
+            for module in modules_run_info.keys():
+                modules_run_info[module]['run_interval'] = 1
         for module, run_info in modules_run_info.items():
             time.sleep(1)
             if int(time.time() - run_info['last_run_time']) > run_info['run_interval']:
