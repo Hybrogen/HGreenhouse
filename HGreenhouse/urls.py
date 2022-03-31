@@ -28,4 +28,5 @@ urlpatterns = [
     path('setZheGuang', views.set_curtain),
     path('getHome', views.get_data),
     path('getDetail', views.get_data),
+    path('getStatus', views.get_state),
 ]

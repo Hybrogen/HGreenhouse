@@ -73,3 +73,10 @@ def get_data(request):
     light_data = sql.get_data(rdata)
     return JsonResponse({'state': 'ok', 'dht_data': dht_data, 'light_data': light_data})
 
+def get_state(request):
+    with open('HModules/thresholds', encoding='utf8') as f: hconfig = json.loads(f.readline())
+    rdata = hconfig
+    rdata['pid'] = request.GET['houseNum'][0]
+    rdata['state'] = 'ok'
+    return JsonResponse(rdata)
+

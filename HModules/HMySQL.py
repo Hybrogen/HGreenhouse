@@ -107,6 +107,15 @@ class HSQL(object):
             sql += f" ORDER BY id DESC LIMIT {query_data['query_num']}"
         elif 'start_date' in query_data and 'end_date' in query_data:
             sql += f" AND `check_datetime` BETWEEN '{query_data['start_date']}' AND '{query_data['end_date']}'"
+            sql = f"""
+            SELECT {fields} FROM `{query_data['data_type']}_{self.data_table}` WHERE `id` in (
+                SELECT `cid` FROM (
+                        SELECT MAX(`id`) as `cid`, DATE_FORMAT(`check_datetime`, '%Y-%m-%d %H') as `cdate`
+                        FROM `dht_datas` WHERE `check_datetime` BETWEEN '{query_data['start_date']}' AND '{query_data['end_date']}' AND `pid` = {pid}
+                        GROUP BY `cdate`
+                ) as cdid
+            )
+            """
 
         # 获取并返回数据
         rdata = self.sql_select(sql)
