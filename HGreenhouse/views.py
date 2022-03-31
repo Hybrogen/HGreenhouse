@@ -75,6 +75,8 @@ def get_data(request):
 
 def get_state(request):
     with open('HModules/thresholds', encoding='utf8') as f: hconfig = json.loads(f.readline())
+    del hconfig['curtain_auto']
+    del hconfig['water_auto']
     rdata = hconfig
     rdata['pid'] = request.GET['houseNum'][0]
     rdata['state'] = 'ok'
