@@ -36,7 +36,19 @@ class HSQL(object):
             if cur: cur.close()
             if self.con: self.con.close()
             self.con = self.get_sql_connection()
-            
+
+    def data_save(self, data: dict) -> bool:
+        try:
+            this_data_fields = ['pid'] + self.data_fields[data['type']]
+            save_data = list()
+            for k in this_data_fields[:-1]: save_data.append(data[k])
+            save_data.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
+        except KeyError:
+            return False
+
+        sql = f"insert into `{data['type']}_{self.data_table}`({', '.join(['`' + f + '`' for f in this_data_fields])}) values(', '.join([%s]*(len(this_data_fields))))"
+        return self.sql_insert(sql, save_data)
+
     def dht_save(self, data: dict) -> bool:
         try:
             save_data = list()
@@ -48,6 +60,12 @@ class HSQL(object):
 
         sql = f"insert into `dht_{self.data_table}`(`pid`, `temperature`, `humidity`, `check_datetime`) values(%s, %s, %s, %s)"
         return self.sql_insert(sql, save_data)
+
+    def light_save(self, data: dict) -> bool:
+        try:
+            save_data = list()
+        except KeyError:
+            return False
 
     def add_port(self, name: str, local: str):
         save_data = [name, local]

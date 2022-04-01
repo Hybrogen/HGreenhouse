@@ -124,9 +124,12 @@ def main():
                 modules_run_info[module]['run_interval'] = 1
         for module, run_info in modules_run_info.items():
             time.sleep(1)
-            if int(time.time() - run_info['last_run_time']) > run_info['run_interval']:
-                modules_run_info[module]['run_interval'] = eval(f"module_{module}")()
-                run_info['last_run_time'] = time.time()
+            try:
+                if int(time.time() - run_info['last_run_time']) > run_info['run_interval']:
+                    modules_run_info[module]['run_interval'] = eval(f"module_{module}")()
+                    run_info['last_run_time'] = time.time()
+            except TypeError:
+                modules_run_info[module]['run_interval'] = 1
 
 if __name__ == '__main__':
     try:
