@@ -3,6 +3,23 @@
 import time
 import json
 
+def ttime(gt_mode: str = 'all'):
+    if gt_mode == 'all': return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+    temp_strs = {
+        'all': '%Y-%m-%d %H:%M:%S',
+        'year': '%Y',
+        'mounth': '%m',
+        'day': '%d',
+        'hour': '%H',
+        'minute': '%M',
+        'second': '%S',
+    }
+    return int(time.strftime(temp_strs[gt_mode], time.localtime(time.time())))
+
+def hlog(msg, msg_type = 'info'):
+    return
+    print(f"{ttime()} - {msg_type}: {msg}")
+
 import pymysql
 
 class HSQL(object):
@@ -24,6 +41,7 @@ class HSQL(object):
 #####################          插入操作          ##########################
 
     def sql_insert(self, sql: str, save_data: list):
+        hlog(f"sql_insert sql = {sql}")
         try:
             cur = self.con.cursor()
             cur.execute(sql, save_data)
@@ -40,16 +58,18 @@ class HSQL(object):
     def data_save(self, data: dict) -> bool:
         try:
             this_data_fields = ['pid'] + self.data_fields[data['type']]
-            save_data = list()
-            for k in this_data_fields[:-1]: save_data.append(data[k])
-            save_data.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
+            save_data = [data[k] for k in this_data_fields[:-1]]
+            save_data.append(ttime())
         except KeyError:
+            hlog(f"data_save data = {data}", 'error')
             return False
 
-        sql = f"insert into `{data['type']}_{self.data_table}`({', '.join(['`' + f + '`' for f in this_data_fields])}) values(', '.join([%s]*(len(this_data_fields))))"
+        sql = f"insert into `{data['type']}_{self.data_table}`({', '.join(['`' + f + '`' for f in this_data_fields])}) values({', '.join(['%s']*len(this_data_fields))})"
         return self.sql_insert(sql, save_data)
 
     def dht_save(self, data: dict) -> bool:
+        data['type'] = 'dht'
+        return self.data_save(data)
         try:
             save_data = list()
             for k in ['pid', 'temperature', 'humidity']:
@@ -62,10 +82,8 @@ class HSQL(object):
         return self.sql_insert(sql, save_data)
 
     def light_save(self, data: dict) -> bool:
-        try:
-            save_data = list()
-        except KeyError:
-            return False
+        data['type'] = 'light'
+        return self.data_save(data)
 
     def add_port(self, name: str, local: str):
         save_data = [name, local]
