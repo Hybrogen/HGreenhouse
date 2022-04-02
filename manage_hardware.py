@@ -88,12 +88,11 @@ def module_1_autoWater(h_config) -> int:
     humidity, temperature = data['humidity'], data['temperature']
 
     hlog(f"检测到温湿度数据: data = {data}", 'data')
-    nextState = False
-    if humidity < h_config['humidity'] or temperature > h_config['temperature']: nextState = True
-    a_water.run(nextState)
-    h_config['water_state'] = nextState
+    waterOn = humidity < h_config['humidity'] or temperature > h_config['temperature']
+    a_water.run(waterOn)
+    h_config['water_state'] = waterOn
     update_threshold_file(h_config)
-    return ((10 if nextState else 600) - int(time.time() - start_run_time), h_config)
+    return ((10 if waterOn else 600) - int(time.time() - start_run_time), h_config)
 
 def module_2_autoCurtain(h_config) -> int:
     start_run_time = time.time()
