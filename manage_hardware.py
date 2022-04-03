@@ -5,8 +5,10 @@ import os
 import json
 import time
 
+UTCDIFF = 8
+
 def ttime(gt_mode: str = 'all'):
-    if gt_mode == 'all': return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+    if gt_mode == 'all': return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time() + UTCDIFF*3600))
     temp_strs = {
         'all': '%Y-%m-%d %H:%M:%S',
         'year': '%Y',
@@ -16,7 +18,7 @@ def ttime(gt_mode: str = 'all'):
         'minute': '%M',
         'second': '%S',
     }
-    return int(time.strftime(temp_strs[gt_mode], time.localtime(time.time())))
+    return int(time.strftime(temp_strs[gt_mode], time.localtime(time.time() + UTCDIFF*3600)))
 
 def hlog(msg, msg_type = 'info'):
     if msg_type in ['info']: return

@@ -95,15 +95,20 @@ class HSQL(object):
 
     def sql_select(self, sql: str):
         print(f"sql_select info: sql = [{sql}]")
-        try:
-            cur = self.con.cursor()
-            cur.execute(sql)
-            rdata = cur.fetchall()
-            cur.close()
-            return rdata
-        except Exception as e:
-            print(f"sql_select error: e = {e}")
-            return None
+        cur = self.con.cursor()
+        cur.execute(sql)
+        rdata = cur.fetchall()
+        cur.close()
+        return rdata
+        # try:
+        #     cur = self.con.cursor()
+        #     cur.execute(sql)
+        #     rdata = cur.fetchall()
+        #     cur.close()
+        #     return rdata
+        # except Exception as e:
+        #     print(f"sql_select error: e = {e}")
+        #     return None
 
     def get_ports(self, query_data: dict = None) -> dict:
         sql = f"select * from `{self.port_table}`"

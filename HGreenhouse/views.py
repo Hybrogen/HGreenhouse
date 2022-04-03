@@ -6,6 +6,8 @@ from django.http import JsonResponse
 import json
 import time
 
+UTCDIFF = 8
+
 from HModules import HMySQL
 
 sql = HMySQL.HSQL('HGreenhouse')
@@ -70,8 +72,9 @@ def get_data(request):
         rdata['start_date'] = request.GET['startTime']
         rdata['end_date'] = request.GET['endTime']
     else:
-        rdata['start_date'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time() - 24*3600))
-        rdata['end_date'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+        now_tt = time.time() + UTCDIFF*3600
+        rdata['start_date'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(now_tt - 24*3600))
+        rdata['end_date'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(now_tt))
     rdata['data_type'] = 'dht'
     dht_data = sql.get_data(rdata)
     rdata['data_type'] = 'light'
