@@ -94,21 +94,26 @@ class HSQL(object):
 #####################          查询操作          ##########################
 
     def sql_select(self, sql: str):
-        print(f"sql_select info: sql = [{sql}]")
-        cur = self.con.cursor()
-        cur.execute(sql)
-        rdata = cur.fetchall()
-        cur.close()
-        return rdata
-        # try:
-        #     cur = self.con.cursor()
-        #     cur.execute(sql)
-        #     rdata = cur.fetchall()
-        #     cur.close()
-        #     return rdata
-        # except Exception as e:
-        #     print(f"sql_select error: e = {e}")
-        #     return None
+        # hlog(f"sql_select: sql = {sql}")
+        # cur = self.con.cursor()
+        # cur.execute(sql)
+        # rdata = cur.fetchall()
+        # cur.close()
+        # return rdata
+        try:
+            cur = self.con.cursor()
+            cur.execute(sql)
+            rdata = cur.fetchall()
+            cur.close()
+            return rdata
+        except pymysql.err.InterfaceError:
+            if cur: cur.close()
+            if self.con: self.con.close()
+            self.con = self.get_sql_connection()
+            return None
+        except Exception as e:
+            print(f"sql_select error: e = {e}")
+            return None
 
     def get_ports(self, query_data: dict = None) -> dict:
         sql = f"select * from `{self.port_table}`"
