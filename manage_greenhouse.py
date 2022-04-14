@@ -73,7 +73,7 @@ def update_threshold_file(h_config):
 from HModules import HActuator, HMySQL, HSensors
 
 sql = HMySQL.HSQL('HGreenhouse')
-s_dht = HSensors.DHT(4, 'DHT22')
+s_dht = HSensors.DHT(4)
 a_curtain = HActuator.SteeppingMOTOR([5, 6, 13, 19])
 s_light = HSensors.IOSENSOR(20)
 a_water = HActuator.HRELAY(21)
@@ -99,26 +99,27 @@ def module_1_autoWater(h_config) -> int:
 def module_2_autoCurtain(h_config) -> int:
     start_run_time = time.time()
     # h_config = reset_threshold(h_config)
-    have_light = s_light.check()
+    checkLight = 22 if s_light.check() else 5
     data = dict()
     data['pid'] = PORTID
-    data['light'] = 22.2
+    data['light'] = checkLight
     sql.light_save(data)
 
+    lightLow = checkLight < h_config['light']
     # 自动模式 - 
     if h_config['curtain_auto']:
-        if have_light == h_config['curtain_state']:
-            a_curtain.run(not have_light)
-            h_config['curtain_state'] = not have_light
-            update_threshold_file()
+        if lightLow != h_config['curtain_state']:
+            a_curtain.run(lightLow, 10)
+            h_config['curtain_state'] = lightLow
+            update_threshold_file(h_config)
     # 手动模式 - 如果检测状态与手动设定状态不同，活动窗帘
     # 并将窗帘重置为自动模式
     else:
         h_config['curtain_auto'] = True
-        a_curtain.run(h_config['curtain_state'])
+        a_curtain.run(h_config['curtain_state'], 10)
         update_threshold_file(h_config)
 
-    hlog(f"检测到光照度数据: have_light = {have_light}", 'data')
+    hlog(f"检测到光照度数据: checkLight = {checkLight}", 'data')
     return (600 - int(time.time() - start_run_time), h_config)
 
 def main(h_config):
@@ -134,9 +135,6 @@ def main(h_config):
         },
     }
     while True:
-        # hlog(f"os.path.isfile({RECONFIG}) = {os.path.isfile(RECONFIG)}")
-        # hlog(f"h_config = {h_config}\n{'-'*100}")
-        # input()
         if os.path.isfile(RECONFIG):
             hlog(f"main 存在文件 {RECONFIG}")
             h_config = reset_threshold(h_config)
@@ -144,9 +142,6 @@ def main(h_config):
                 modules_run_info[module]['run_interval'] = 1
         for module in modules_run_info.keys():
             time.sleep(1)
-            # if int(time.time() - modules_run_info[module]['last_run_time']) > modules_run_info[module]['run_interval']:
-            #     modules_run_info[module]['run_interval'], h_config = eval(f"module_{module}")(h_config)
-            #     modules_run_info[module]['last_run_time'] = time.time()
             try:
                 if int(time.time() - modules_run_info[module]['last_run_time']) > modules_run_info[module]['run_interval']:
                     modules_run_info[module]['run_interval'], h_config = eval(f"module_{module}")(h_config)
